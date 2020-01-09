@@ -23,12 +23,16 @@ Required Parameters:
 }
 ```
 
-## /profile
+## ```/profile```
 
-### POST /register
+### ```POST /register```
 Required Parameters:
 - email: Email of the newly registered user
 ```json
 {
     "coins": "Int"
 }
+```
+
+## ```/install```
+Install all the settings in the database.

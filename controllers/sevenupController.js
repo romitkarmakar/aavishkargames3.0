@@ -1,129 +1,60 @@
 require("dotenv").config();
 const express = require("express");
 var router = express.Router();
-var mongodb = require("mongodb");
-var MongoClient = require("mongodb").MongoClient;
-const Sevenup = require('../models/Sevenup')
-
-insertDocument = (collectionName, body) => {
-  return new Promise((resolve, reject) => {
-    MongoClient.connect(process.env.MONGODB_URL, function(err, client) {
-      const db = client.db(process.env.MONGODB_DB);
-      const collection = db.collection(collectionName);
-
-      collection.insertOne(body, function(err, result) {
-        resolve(result);
-      });
-      client.close();
-    });
-  });
-};
-
-findDocument = (collectionName, body) => {
-  return new Promise((resolve, reject) => {
-    MongoClient.connect(process.env.MONGODB_URL, function(err, client) {
-      const db = client.db(process.env.MONGODB_DB);
-      const collection = db.collection(collectionName);
-
-      collection.findOne(body, function(err, result) {
-        resolve(result);
-      });
-      client.close();
-    });
-  });
-};
-
-updateDocument = (collectionName, find, body) => {
-  return new Promise((resolve, reject) => {
-    MongoClient.connect(process.env.MONGODB_URL, function(err, client) {
-      const db = client.db(process.env.MONGODB_DB);
-      const collection = db.collection(collectionName);
-
-      collection.updateOne(
-        find,
-        {
-          $set: body
-        },
-        function(err, result) {
-          resolve(result);
-        }
-      );
-      client.close();
-    });
-  });
-};
+const Sevenup = require("../models/Sevenup");
+const Config = require("../models/Config");
+var Profile = require("../models/Profile");
 
 router.post("/toss", async function(req, res) {
   var doc = await findDocument("config", {
     type: "store"
   });
-  if (doc.value < 0) {
+  if (doc.value < -50) {
     res.send({
       result: -1
     });
-  } else if (doc.value == 0) {
+  } else if (doc.value > 50) {
     res.send({
-      result: 0
+      result: 1
     });
   } else {
     res.send({
-      result: 1
+      result: 0
     });
   }
 });
 
 router.post("/create", async function(req, res) {
-  // await insertDocument("sevenup", {
-  //   email: req.body.email,
-  //   timestamp: Date.now(),
-  //   status: req.body.status
-  // });
-
+  // Save Session Data
   var sevenup = new Sevenup({
     email: req.body.email,
     status: req.body.status
-  })
+  });
 
-  await sevenup.save()
+  await sevenup.save();
 
-  var result = await findDocument("config", {
+  // Save Store Data
+  config = await Config.findOne({
     type: "store"
   });
 
-  newValue = result.value;
-  if (req.body.status == "winner") newValue -= 10;
-  if (req.body.status == "loser") newValue += 10;
+  if (req.body.status == "winner") config.value -= 10;
+  if (req.body.status == "loser") config.value += 10;
 
-  await updateDocument(
-    "config",
-    {
-      type: "store"
-    },
-    {
-      value: newValue
-    }
-  );
+  await config.save();
 
-  var doc = await findDocument("profiles", {
+  // Save Profile Data
+  profile = await Profile.findOne({
     email: req.body.email
   });
 
-  value = doc.coins;
-  if (req.body.status == "winner") value += 10;
-  if (req.body.status == "loser") value -= 10;
+  if (req.body.status == "winner") profile.coins += 10;
+  if (req.body.status == "loser") profile.coins -= 10;
 
-  await updateDocument(
-    "profiles",
-    {
-      email: req.body.email
-    },
-    {
-      coins: value
-    }
-  );
+  await profile.save();
 
   res.send({
-    coins: value
+    coins: profile.coins
   });
 });
 

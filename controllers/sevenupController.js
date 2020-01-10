@@ -6,7 +6,7 @@ const Config = require("../models/Config");
 var Profile = require("../models/Profile");
 
 router.post("/toss", async function(req, res) {
-  var doc = await findDocument("config", {
+  doc = await Config.findOne({
     type: "store"
   });
   if (doc.value < -50) {

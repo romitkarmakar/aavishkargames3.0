@@ -24,3 +24,12 @@ Required Parameters:
     "coins": "Int"
 }
 ```
+### ```GET /list/:game```
+game: Name of the game
+
+Response Syntax:  
+```json
+{
+    "result": "Documents[]"
+}
+```

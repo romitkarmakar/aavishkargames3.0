@@ -36,7 +36,7 @@ app.post("/toss", async function(req, res) {
 });
 
 app.post("/create", async function(req, res) {
-  console.log(req.body)
+  console.log(req.body);
   var game = new Game(req.body);
   await game.save();
 
@@ -55,6 +55,16 @@ app.post("/create", async function(req, res) {
     )
     .then(response => res.send(response))
     .catch(err => res.send(err));
+});
+
+app.get("/list/:game", function(req, res) {
+  Game.find({ type: req.params.game })
+    .limit(10).sort({ timestamp: -1 })
+    .exec((err, docs) => {
+      res.send({
+        result: docs
+      });
+    });
 });
 
 app.get("/coins/:email", function(req, res) {

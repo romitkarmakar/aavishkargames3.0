@@ -5,6 +5,10 @@ const app = express();
 var sha1 = require("sha1");
 const axios = require("axios");
 const Game = require("./models/Game");
+var redis = require("redis");
+var client = redis.createClient(process.env.REDISCLOUD_URL, {
+  no_ready_check: true
+});
 
 app.use(require("cors")());
 app.use(express.json());
@@ -59,7 +63,8 @@ app.post("/create", async function(req, res) {
 
 app.get("/list/:game", function(req, res) {
   Game.find({ type: req.params.game })
-    .limit(10).sort({ timestamp: -1 })
+    .limit(10)
+    .sort({ timestamp: -1 })
     .exec((err, docs) => {
       res.send({
         result: docs
@@ -68,11 +73,28 @@ app.get("/list/:game", function(req, res) {
 });
 
 app.get("/list", function(req, res) {
+  client.ltrim("list", 0, 10);
+  client.lrange("list", 0, -1, function(err, reply) {
+    valuesJson = reply.map(v => JSON.parse(v));
+    res.send({
+      value: valuesJson
+    });
+  });
+});
+
+app.get("/cache", function(req, res) {
   Game.find({})
-    .limit(10).sort({ timestamp: -1 })
+    .limit(10)
+    .sort({ timestamp: -1 })
     .exec((err, docs) => {
-      res.send({
-        result: docs
+      valuesJson = docs.map(v => v.toJSON());
+      values = valuesJson.map(v => JSON.stringify(v));
+      console.log(values);
+      client.del('list');
+      client.rpush(["list", ...values], function(err, reply) {
+        res.send({
+          value: reply
+        });
       });
     });
 });

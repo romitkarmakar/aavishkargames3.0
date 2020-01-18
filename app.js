@@ -82,23 +82,6 @@ app.get("/list", function(req, res) {
   });
 });
 
-app.get("/cache", function(req, res) {
-  Game.find({})
-    .limit(10)
-    .sort({ timestamp: -1 })
-    .exec((err, docs) => {
-      valuesJson = docs.map(v => v.toJSON());
-      values = valuesJson.map(v => JSON.stringify(v));
-      console.log(values);
-      client.del('list');
-      client.rpush(["list", ...values], function(err, reply) {
-        res.send({
-          value: reply
-        });
-      });
-    });
-});
-
 app.get("/coins/:email", function(req, res) {
   axios
     .get(

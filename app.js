@@ -67,6 +67,16 @@ app.get("/list/:game", function(req, res) {
     });
 });
 
+app.get("/list", function(req, res) {
+  Game.find({})
+    .limit(10).sort({ timestamp: -1 })
+    .exec((err, docs) => {
+      res.send({
+        result: docs
+      });
+    });
+});
+
 app.get("/coins/:email", function(req, res) {
   axios
     .get(

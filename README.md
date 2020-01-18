@@ -33,3 +33,13 @@ Response Syntax:
     "result": "Documents[]"
 }
 ```
+
+### ```GET /list```
+game: Name of the game
+
+Response Syntax:  
+```json
+{
+    "result": "Documents[]"
+}
+```

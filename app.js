@@ -9,6 +9,9 @@ var redis = require("redis");
 var client = redis.createClient(process.env.REDISCLOUD_URL, {
   no_ready_check: true
 });
+var q = 'tasks';
+var url = process.env.CLOUDAMQP_URL || "amqp://localhost";
+var open = require('amqplib').connect(url);
 
 app.use(require("cors")());
 app.use(express.json());
@@ -40,25 +43,14 @@ app.post("/toss", async function(req, res) {
 });
 
 app.post("/create", async function(req, res) {
-  console.log(req.body);
-  var game = new Game(req.body);
-  await game.save();
-
-  let receiver = req.body.email;
-  let sender = process.env.GAME_EMAIL;
-
-  if (req.body.status == "loser") {
-    receiver = [sender, (sender = receiver)][0];
-  }
-
-  var response = await axios
-    .get(
-      `${process.env.EUREKOIN_BASE_URL}api/transfer/?token=${generateToken(
-        sender
-      )}&amount=${req.body.amount}&email=${receiver}`
-    )
-    .then(response => res.send(response))
-    .catch(err => res.send(err));
+  open.then(function(conn) {
+    var ok = conn.createChannel();
+    ok = ok.then(function(ch) {
+      ch.assertQueue(q);
+      ch.sendToQueue(q, new Buffer(JSON.stringify(req.body)));
+    });
+    res.send("OK");
+  }).then(null, console.warn);
 });
 
 app.get("/list/:game", function(req, res) {

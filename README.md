@@ -9,7 +9,7 @@ Required parameters:
 Response Syntax:
 ```json
 {
-    "result": "Int"
+    "status": "Int"
 }
 ```
 

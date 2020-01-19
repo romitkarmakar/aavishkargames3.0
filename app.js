@@ -22,24 +22,11 @@ function generateToken(email) {
 }
 
 app.post("/toss", async function(req, res) {
-  axios
-    .get(
-      `${process.env.EUREKOIN_BASE_URL}api/coins/?token=${generateToken(
-        process.env.GAME_EMAIL
-      )}`
-    )
-    .then(response => {
-      if (response.data.coins > 0) {
-        res.send({
-          status: 0
-        });
-      } else {
-        res.send({
-          status: -1
-        });
-      }
-    })
-    .catch(err => res.send(err));
+  client.get("store", function(err, reply) {
+    if(Number(reply) < -100) res.send({ status: -1 });
+    else if(Number(reply) > 100) res.send({ status: 1 });
+    else res.send({ status: 0 });
+  })
 });
 
 app.post("/create", async function(req, res) {

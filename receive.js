@@ -7,13 +7,20 @@ var redis = require("redis");
 var client = redis.createClient(process.env.REDISCLOUD_URL, {
   no_ready_check: true
 });
-var q = 'tasks';
+var q = "tasks";
 var url = process.env.CLOUDAMQP_URL || "amqp://localhost";
-var open = require('amqplib').connect(url);
+var open = require("amqplib").connect(url);
 
 function generateToken(email) {
   var encodeString = utf8.encode(`${email}${process.env.SECRET_KEY}`);
   return sha1(encodeString);
+}
+
+async function add(value) {
+  client.get("store", function(err, reply) {
+    console.log(Number(reply));
+    client.set("store", String(Number(reply) + value));
+  });
 }
 
 async function persist(data) {
@@ -26,7 +33,10 @@ async function persist(data) {
 
   if (data.status == "loser") {
     receiver = [sender, (sender = receiver)][0];
-  }
+    add(data.amount);
+  } else if(data.status == "winner") {
+    add(-data.amount);
+  } else return;
 
   axios
     .get(
@@ -39,17 +49,19 @@ async function persist(data) {
 }
 
 // Consumer
-open.then(function(conn) {
-  var ok = conn.createChannel();
-  ok = ok.then(function(ch) {
-    ch.assertQueue(q);
-    ch.consume(q, function(msg) {
-      if (msg !== null) {
-        console.log(msg.content.toString());
-        persist(JSON.parse(msg.content.toString()));
-        ch.ack(msg);
-      }
+open
+  .then(function(conn) {
+    var ok = conn.createChannel();
+    ok = ok.then(function(ch) {
+      ch.assertQueue(q);
+      ch.consume(q, function(msg) {
+        if (msg !== null) {
+          console.log(msg.content.toString());
+          persist(JSON.parse(msg.content.toString()));
+          ch.ack(msg);
+        }
+      });
     });
-  });
-  return ok;
-}).then(null, console.warn);
+    return ok;
+  })
+  .then(null, console.warn);

@@ -9,9 +9,10 @@ var redis = require("redis");
 var client = redis.createClient(process.env.REDISCLOUD_URL, {
   no_ready_check: true
 });
-var q = 'tasks';
+var q = "tasks";
+var q2 = "profiles";
 var url = process.env.CLOUDAMQP_URL || "amqp://localhost";
-var open = require('amqplib').connect(url);
+var open = require("amqplib").connect(url);
 
 app.use(require("cors")());
 app.use(express.json());
@@ -22,22 +23,33 @@ function generateToken(email) {
 }
 
 app.post("/toss", async function(req, res) {
+  open
+    .then(function(conn) {
+      var ok = conn.createChannel();
+      ok = ok.then(function(ch) {
+        ch.assertQueue(q2);
+        ch.sendToQueue(q2, new Buffer(req.body.email));
+      });
+    })
+    .then(null, console.warn);
   client.get("store", function(err, reply) {
-    if(Number(reply) < -100) res.send({ status: -1 });
-    else if(Number(reply) > 100) res.send({ status: 1 });
+    if (Number(reply) < -100) res.send({ status: -1 });
+    else if (Number(reply) > 100) res.send({ status: 1 });
     else res.send({ status: 0 });
-  })
+  });
 });
 
 app.post("/create", async function(req, res) {
-  open.then(function(conn) {
-    var ok = conn.createChannel();
-    ok = ok.then(function(ch) {
-      ch.assertQueue(q);
-      ch.sendToQueue(q, new Buffer(JSON.stringify(req.body)));
-    });
-    res.send("OK");
-  }).then(null, console.warn);
+  open
+    .then(function(conn) {
+      var ok = conn.createChannel();
+      ok = ok.then(function(ch) {
+        ch.assertQueue(q);
+        ch.sendToQueue(q, new Buffer(JSON.stringify(req.body)));
+      });
+      res.send("OK");
+    })
+    .then(null, console.warn);
 });
 
 app.get("/list/:game", function(req, res) {

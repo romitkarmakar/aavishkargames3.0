@@ -41,6 +41,10 @@ async function persist(data) {
   var game = new Game(data);
   await game.save();
 
+  client.lpush(["list", JSON.stringify(data)], function(err, reply) {
+    console.log(reply);
+  });
+
   let receiver = data.email;
   let sender = process.env.GAME_EMAIL;
 

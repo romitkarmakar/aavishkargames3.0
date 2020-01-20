@@ -15,6 +15,12 @@ class App {
         message: 'Hello World!'
       })
     })
+    router.get('/name/:title', (req, res) => {
+      var tit : String = req.params.title
+      res.json({
+        message: `Hello ${tit}`
+      })
+    })
     this.express.use('/', router)
   }
 }

@@ -1,5 +1,35 @@
 # Aavishkar Games 3.0
 
+## Requirements
+- Provision a RabbitMQ Message broker node.
+- Provision a Redis Cache Server.
+- Provision a PostgreSQL Server.
+- Provision a Mongodb Cluster.
+
+## Installation
+- Copy the env file and all the required api keys.
+```
+cpy .env.example .env
+```
+- Run the following to setup the redis cache server.
+```
+node install.js
+```
+- Start the development server
+```
+npm run dev
+```
+- To run the production server
+```
+npm start
+```
+- To run the consumer node to process all the data. (Always running process)
+```
+npm run background
+```
+
+## API Documentation
+
 ## ```/```
 
 ### ```POST /toss```
